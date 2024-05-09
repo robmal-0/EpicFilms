@@ -147,7 +147,7 @@ fun App(
                 MovieList(movieList = uiState.topRated, navController = navController, viewModel = viewModel)
             }
             composable(route = SelectedScreen.Favorite.name) {
-                Text(stringResource(R.string.favorite))
+                MovieList(movieList = uiState.favorites, navController = navController, viewModel = viewModel)
             }
             composable(route = SelectedScreen.Selected.name) {
                 if (uiState.selectedMovie != null) {

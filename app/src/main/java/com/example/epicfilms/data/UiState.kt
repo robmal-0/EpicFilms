@@ -5,5 +5,6 @@ data class UiState(
     val popular: List<Movie> = arrayListOf(),
     val topRatedPages: Int = 0,
     val topRated: List<Movie> = arrayListOf(),
-    val selectedMovie: Movie? = null
+    val selectedMovie: Movie? = null,
+    val favorites: List<Movie> = arrayListOf()
 )

@@ -53,4 +53,20 @@ class MoviesViewModel: ViewModel() {
             }
         }
     }
+
+    fun favorite(movie: Movie) {
+        _uiState.update {state ->
+            state.copy(
+                favorites = state.favorites + movie
+            )
+        }
+    }
+
+    fun unfavorite(movie: Movie) {
+        _uiState.update {state ->
+            state.copy(
+                favorites = state.favorites.filter { it.id != movie.id }
+            )
+        }
+    }
 }
