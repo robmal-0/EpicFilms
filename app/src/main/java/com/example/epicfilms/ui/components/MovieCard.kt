@@ -39,6 +39,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.epicfilms.SelectedScreen
+import com.example.epicfilms.data.FavoriteMovieRepository
 import com.example.epicfilms.data.Movie
 import com.example.epicfilms.ui.MoviesViewModel
 
@@ -47,7 +48,7 @@ fun MovieCard(
     movie: Movie,
     modifier: Modifier,
     navController: NavHostController,
-    viewModel: MoviesViewModel
+    viewModel: MoviesViewModel,
 ) {
     Box (modifier = modifier) {
         Card(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp).shadow(3.dp, shape = AbsoluteCutCornerShape(5.dp)).clickable {

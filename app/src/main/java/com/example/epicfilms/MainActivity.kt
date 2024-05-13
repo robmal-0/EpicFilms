@@ -7,8 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
@@ -44,9 +48,17 @@ import com.example.epicfilms.ui.MovieList
 import com.example.epicfilms.ui.MoviesViewModel
 import com.example.epicfilms.ui.theme.EpicFilmsTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.epicfilms.data.FavoriteMovieRepository
 import com.example.epicfilms.data.Genre
 import com.example.epicfilms.data.Movie
+import com.example.epicfilms.data.MovieCacheRepository
+import com.example.epicfilms.data.MovieDatabase
 import com.example.epicfilms.ui.MoviePage
+import com.example.epicfilms.ui.NoInternetPage
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 enum class SelectedScreen(@StringRes val title: Int) {
     Popular(title = R.string.popular),
@@ -69,12 +81,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
 @Composable
 fun App(
     modifier: Modifier = Modifier,
     viewModel: MoviesViewModel = viewModel(),
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -82,6 +94,12 @@ fun App(
         backStackEntry?.destination?.route ?: SelectedScreen.Popular.name
     )
     val uiState by viewModel.uiState.collectAsState()
+
+    val db = MovieDatabase.getInstance(LocalContext.current)
+    val favMovieRepo = FavoriteMovieRepository(db.favoriteDao())
+    viewModel.addFavoRepo(favMovieRepo)
+    val movieCacheRepo = MovieCacheRepository(db.movieCacheDao())
+    viewModel.addMovieCacheRepo(movieCacheRepo)
 
     Scaffold (
         topBar = {
@@ -100,7 +118,14 @@ fun App(
             NavigationBar {
                 NavigationBarItem(
                     selected = currentScreen == SelectedScreen.Popular,
-                    onClick = { navController.navigate(SelectedScreen.Popular.name) },
+                    onClick = {
+                        navController.navigate(SelectedScreen.Popular.name)
+                        if (uiState.popular.isNotEmpty()) {
+                            GlobalScope.launch {
+                                uiState.movieCacheRepo?.replaceWith("popular", uiState.popular)
+                            }
+                        }
+                    },
                     label = { Text(stringResource(R.string.popular))},
                     icon = {
                         Icon(imageVector = Icons.Filled.Star, contentDescription = "Popular")
@@ -108,7 +133,14 @@ fun App(
                 )
                 NavigationBarItem(
                     selected = currentScreen == SelectedScreen.TopRated,
-                    onClick = { navController.navigate(SelectedScreen.TopRated.name) },
+                    onClick = {
+                        navController.navigate(SelectedScreen.TopRated.name)
+                        if (uiState.topRated.isNotEmpty()) {
+                            GlobalScope.launch {
+                                uiState.movieCacheRepo?.replaceWith("top_rated", uiState.topRated)
+                            }
+                        }
+                    },
                     label = { Text(stringResource(R.string.top_rated))},
                     icon = {
                         Icon(imageVector = Icons.Filled.ThumbUp, contentDescription = "Popular")
@@ -125,7 +157,6 @@ fun App(
             }
         }
     ) {
-
         NavHost(
             navController = navController,
             startDestination = SelectedScreen.Popular.name,
@@ -138,11 +169,17 @@ fun App(
                 if (uiState.popularPages == 0) {
                     viewModel.loadPagePopular()
                 }
+                if (uiState.popularPageError !== null) {
+                    NoInternetPage(modifier = Modifier.fillMaxSize())
+                }
                 MovieList(movieList = uiState.popular, navController = navController, viewModel = viewModel)
             }
             composable(route = SelectedScreen.TopRated.name) {
                 if (uiState.topRatedPages == 0) {
                     viewModel.loadPageTopRated()
+                }
+                if (uiState.topRatedPageError !== null) {
+                    NoInternetPage(modifier = Modifier.fillMaxSize())
                 }
                 MovieList(movieList = uiState.topRated, navController = navController, viewModel = viewModel)
             }
