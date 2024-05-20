@@ -2,6 +2,7 @@ package com.example.epicfilms.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -17,8 +18,22 @@ fun MovieList(
     viewModel: MoviesViewModel,
 ) {
     Column(modifier = modifier) {
-        for (movie in movieList) {
-            MovieCard(movie, modifier = Modifier, navController = navController, viewModel = viewModel)
+        var i = 0
+        val COLS = 1
+        while (i < movieList.size) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                var j = 0
+                while (j < COLS && i < movieList.size) {
+                    MovieCard(
+                        movieList[i],
+                        modifier = Modifier.weight(1f),
+                        navController = navController,
+                        viewModel = viewModel
+                    )
+                    j++
+                    i++
+                }
+            }
         }
     }
 }
