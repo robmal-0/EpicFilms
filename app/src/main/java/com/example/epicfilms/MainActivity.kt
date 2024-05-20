@@ -1,27 +1,20 @@
 package com.example.epicfilms
 
+import android.content.Context
 import android.graphics.drawable.Icon
+import android.net.ConnectivityManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -29,7 +22,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.getSystemService
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -49,15 +42,12 @@ import com.example.epicfilms.ui.MoviesViewModel
 import com.example.epicfilms.ui.theme.EpicFilmsTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.epicfilms.data.FavoriteMovieRepository
-import com.example.epicfilms.data.Genre
-import com.example.epicfilms.data.Movie
 import com.example.epicfilms.data.MovieCacheRepository
 import com.example.epicfilms.data.MovieDatabase
 import com.example.epicfilms.ui.MoviePage
 import com.example.epicfilms.ui.NoInternetPage
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 enum class SelectedScreen(@StringRes val title: Int) {
@@ -100,6 +90,8 @@ fun App(
     viewModel.addFavoRepo(favMovieRepo)
     val movieCacheRepo = MovieCacheRepository(db.movieCacheDao())
     viewModel.addMovieCacheRepo(movieCacheRepo)
+
+    LocalContext.current.unregisterCallback()
 
     Scaffold (
         topBar = {
@@ -171,6 +163,11 @@ fun App(
                 }
                 if (uiState.popularPageError !== null) {
                     NoInternetPage(modifier = Modifier.fillMaxSize())
+                    LocalContext.current.registerCallback { state ->
+                        if (state == ConnectionState.Available) {
+                            viewModel.loadPageTopRated()
+                        }
+                    }
                 }
                 MovieList(movieList = uiState.popular, navController = navController, viewModel = viewModel)
             }
@@ -180,6 +177,11 @@ fun App(
                 }
                 if (uiState.topRatedPageError !== null) {
                     NoInternetPage(modifier = Modifier.fillMaxSize())
+                    LocalContext.current.registerCallback { state ->
+                        if (state == ConnectionState.Available) {
+                            viewModel.loadPageTopRated()
+                        }
+                    }
                 }
                 MovieList(movieList = uiState.topRated, navController = navController, viewModel = viewModel)
             }
